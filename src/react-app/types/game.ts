@@ -10,6 +10,7 @@ export interface Game {
   players: Player[];
   winThreshold: number;
   winner: string | null;
+  rounds: GameRound[];
   createdAt: string;
   updatedAt: string;
 }

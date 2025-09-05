@@ -18,7 +18,7 @@ interface GameSetupProps {
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 8;
-const DEFAULT_WIN_THRESHOLD = 500;
+const DEFAULT_WIN_THRESHOLD = 2000;
 
 export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 	const [playerNames, setPlayerNames] = useState<string[]>(["", ""]);

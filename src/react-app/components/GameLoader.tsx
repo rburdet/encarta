@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	Card,
 	CardContent,
@@ -7,7 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Trophy } from "lucide-react";
+import { ArrowLeft, Calendar, Trophy, Search } from "lucide-react";
 import type { Game } from "../types/game";
 
 interface GameLoaderProps {
@@ -25,6 +26,8 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 	const [games, setGames] = useState<GameSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [gameWord, setGameWord] = useState("");
+	const [searchLoading, setSearchLoading] = useState(false);
 
 	useEffect(() => {
 		fetchGames();
@@ -57,9 +60,44 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 				throw new Error(data.error || "Failed to load game");
 			}
 
-			onLoadGame(data.game);
+			onLoadGame(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to load game");
+		}
+	};
+
+	const handleLoadByWord = async () => {
+		if (!gameWord.trim()) return;
+
+		try {
+			setSearchLoading(true);
+			setError(null);
+			const response = await fetch(
+				`/api/games/${gameWord.trim().toLowerCase()}`,
+			);
+
+			if (!response.ok) {
+				if (response.status === 404) {
+					setError(`No se encontró un juego con la palabra "${gameWord}"`);
+				} else {
+					const data = await response.json();
+					throw new Error(data.error || "Failed to load game");
+				}
+				return;
+			}
+
+			const data = await response.json();
+			onLoadGame(data);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to load game");
+		} finally {
+			setSearchLoading(false);
+		}
+	};
+
+	const handleKeyPress = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter") {
+			handleLoadByWord();
 		}
 	};
 
@@ -79,7 +117,7 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 				<Card className="w-full max-w-md">
 					<CardContent className="p-6">
 						<div className="text-center">
-							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
 							<p>Cargando juegos...</p>
 						</div>
 					</CardContent>
@@ -110,6 +148,41 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-4">
+					{/* Quick load by Spanish word */}
+					<div className="space-y-3">
+						<div>
+							<h3 className="font-medium text-sm mb-2">Cargar por palabra</h3>
+							<div className="flex gap-2">
+								<Input
+									type="text"
+									placeholder="Escribe la palabra del juego (ej: fuego, luna)"
+									value={gameWord}
+									onChange={(e) => setGameWord(e.target.value)}
+									onKeyPress={handleKeyPress}
+									className="flex-1"
+								/>
+								<Button
+									onClick={handleLoadByWord}
+									disabled={!gameWord.trim() || searchLoading}
+									size="icon"
+								>
+									{searchLoading ? (
+										<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background" />
+									) : (
+										<Search className="h-4 w-4" />
+									)}
+								</Button>
+							</div>
+						</div>
+						<div className="relative">
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-background px-2 py-2 text-muted-foreground">
+									o selecciona de la lista
+								</span>
+							</div>
+						</div>
+					</div>
+
 					{error && (
 						<div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
 							<p className="text-sm text-destructive">{error}</p>

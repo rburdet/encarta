@@ -18,7 +18,7 @@ app.post("/api/games", async (c) => {
     games.push({ id: game.id, name: game.name, createdAt: game.createdAt });
     await c.env.CARD_GAMES.put("games:list", JSON.stringify(games));
     
-    return c.json({ success: true, game });
+    return c.json(game);
   } catch (error) {
     console.error("Error creating game:", error);
     return c.json({ error: "Failed to create game" }, 500);
@@ -35,7 +35,7 @@ app.get("/api/games/:id", async (c) => {
     }
     
     const game = JSON.parse(gameData);
-    return c.json({ game });
+    return c.json(game);
   } catch (error) {
     console.error("Error fetching game:", error);
     return c.json({ error: "Failed to fetch game" }, 500);
@@ -56,7 +56,7 @@ app.put("/api/games/:id", async (c) => {
     // Update game in KV
     await c.env.CARD_GAMES.put(`game:${gameId}`, JSON.stringify(updatedGame));
     
-    return c.json({ success: true, game: updatedGame });
+    return c.json(updatedGame);
   } catch (error) {
     console.error("Error updating game:", error);
     return c.json({ error: "Failed to update game" }, 500);
