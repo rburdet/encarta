@@ -38,7 +38,9 @@ export function ScoreTracker({
 	useEffect(() => {
 		// Sync local winner state with game object winner
 		if (game.winner) {
-			const winningPlayer = game.players.find(player => player.name === game.winner);
+			const winningPlayer = game.players.find(
+				(player) => player.name === game.winner,
+			);
 			setWinner(winningPlayer || null);
 		} else {
 			// Check for winner based on scoring system only if game doesn't have a winner yet
@@ -229,7 +231,8 @@ export function ScoreTracker({
 						<CardTitle className="flex items-center justify-between">
 							{game.name || "Encarta Game"}
 							<span className="text-sm font-normal text-muted-foreground">
-								{(game.scoringSystem || "win-on-threshold") === "win-on-threshold"
+								{(game.scoringSystem || "win-on-threshold") ===
+								"win-on-threshold"
 									? `Ganar con ${game.winThreshold} puntos`
 									: `Perder con ${game.winThreshold} puntos`}
 							</span>

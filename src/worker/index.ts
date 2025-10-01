@@ -20,14 +20,25 @@ app.post("/api/games", async (c) => {
   try {
     const game = await c.req.json();
     
+    // Check if game already exists
+    const existingGame = await c.env.CARD_GAMES.get(`game:${game.id}`);
+    if (existingGame) {
+      return c.json({ error: "Game with this ID already exists" }, 409);
+    }
+    
     // Store game in KV
     await c.env.CARD_GAMES.put(`game:${game.id}`, JSON.stringify(game));
     
     // Also store in a list for potential future listing
     const gamesList = await c.env.CARD_GAMES.get("games:list");
     const games = gamesList ? JSON.parse(gamesList) : [];
-    games.push({ id: game.id, name: game.name, createdAt: game.createdAt });
-    await c.env.CARD_GAMES.put("games:list", JSON.stringify(games));
+    
+    // Check if game is already in the list (prevent duplicates)
+    const existingInList = games.find((g: GameSummary) => g.id === game.id);
+    if (!existingInList) {
+      games.push({ id: game.id, name: game.name, createdAt: game.createdAt });
+      await c.env.CARD_GAMES.put("games:list", JSON.stringify(games));
+    }
     
     return c.json(game);
   } catch (error) {
@@ -79,9 +90,19 @@ app.get("/api/games", async (c) => {
     const gamesList = await c.env.CARD_GAMES.get("games:list");
     const games = gamesList ? JSON.parse(gamesList) : [];
     
+    // Remove duplicates from the games list (cleanup for existing data)
+    const uniqueGames = games.filter((game: GameSummary, index: number, self: GameSummary[]) => 
+      index === self.findIndex((g: GameSummary) => g.id === game.id)
+    );
+    
+    // If we found duplicates, update the stored list
+    if (uniqueGames.length !== games.length) {
+      await c.env.CARD_GAMES.put("games:list", JSON.stringify(uniqueGames));
+    }
+    
     // Enrich games with winner status
     const enrichedGames = await Promise.all(
-      games.map(async (gameSummary: GameSummary): Promise<EnrichedGameSummary> => {
+      uniqueGames.map(async (gameSummary: GameSummary): Promise<EnrichedGameSummary> => {
         try {
           const gameData = await c.env.CARD_GAMES.get(`game:${gameSummary.id}`);
           if (gameData) {
