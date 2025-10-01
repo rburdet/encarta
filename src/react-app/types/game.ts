@@ -1,3 +1,5 @@
+export type ScoringSystem = 'win-on-threshold' | 'lose-on-threshold';
+
 export interface Player {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface Game {
   name: string;
   players: Player[];
   winThreshold: number;
+  scoringSystem: ScoringSystem;
   winner: string | null;
   rounds: GameRound[];
   createdAt: string;
@@ -23,5 +26,6 @@ export interface GameRound {
 export interface GameSettings {
   playerNames: string[];
   winThreshold: number;
+  scoringSystem: ScoringSystem;
   gameName?: string;
 }

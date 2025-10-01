@@ -36,14 +36,48 @@ export function ScoreTracker({
 	}, [game.players]);
 
 	useEffect(() => {
-		// Check for winner
-		const winningPlayer = game.players.find(
-			(player) => player.score >= game.winThreshold,
-		);
-		if (winningPlayer && !winner) {
+		// Sync local winner state with game object winner
+		if (game.winner) {
+			const winningPlayer = game.players.find(player => player.name === game.winner);
+			setWinner(winningPlayer || null);
+		} else {
+			// Check for winner based on scoring system only if game doesn't have a winner yet
+			let winningPlayer: Player | null = null;
+
+			// Default to win-on-threshold for backward compatibility
+			const scoringSystem = game.scoringSystem || "win-on-threshold";
+
+			if (scoringSystem === "win-on-threshold") {
+				// Traditional scoring: first to reach threshold wins
+				winningPlayer =
+					game.players.find((player) => player.score >= game.winThreshold) ||
+					null;
+			} else if (scoringSystem === "lose-on-threshold") {
+				// UNO-style scoring: player who reaches threshold loses, last remaining wins
+				const playersOverThreshold = game.players.filter(
+					(player) => player.score >= game.winThreshold,
+				);
+
+				if (playersOverThreshold.length > 0) {
+					// If only one player is left under the threshold, they win
+					const playersUnderThreshold = game.players.filter(
+						(player) => player.score < game.winThreshold,
+					);
+
+					if (playersUnderThreshold.length === 1) {
+						winningPlayer = playersUnderThreshold[0];
+					} else if (playersUnderThreshold.length === 0) {
+						// All players are over threshold, lowest score wins
+						winningPlayer = game.players.reduce((lowest, current) =>
+							current.score < lowest.score ? current : lowest,
+						);
+					}
+				}
+			}
+
 			setWinner(winningPlayer);
 		}
-	}, [game.players, game.winThreshold, winner]);
+	}, [game.players, game.winThreshold, game.scoringSystem, game.winner]);
 
 	const updateRoundScore = (playerId: string, score: string) => {
 		setRoundScores((prev) => ({
@@ -64,6 +98,42 @@ export function ScoreTracker({
 			};
 		});
 
+		// Check for winner with updated scores
+		let gameWinner: string | null = null;
+
+		// Default to win-on-threshold for backward compatibility
+		const scoringSystem = game.scoringSystem || "win-on-threshold";
+
+		if (scoringSystem === "win-on-threshold") {
+			// Traditional scoring: first to reach threshold wins
+			const winningPlayer = updatedPlayers.find(
+				(player) => player.score >= game.winThreshold,
+			);
+			gameWinner = winningPlayer?.name || null;
+		} else if (scoringSystem === "lose-on-threshold") {
+			// UNO-style scoring: player who reaches threshold loses, last remaining wins
+			const playersOverThreshold = updatedPlayers.filter(
+				(player) => player.score >= game.winThreshold,
+			);
+
+			if (playersOverThreshold.length > 0) {
+				// If only one player is left under the threshold, they win
+				const playersUnderThreshold = updatedPlayers.filter(
+					(player) => player.score < game.winThreshold,
+				);
+
+				if (playersUnderThreshold.length === 1) {
+					gameWinner = playersUnderThreshold[0].name;
+				} else if (playersUnderThreshold.length === 0) {
+					// All players are over threshold, lowest score wins
+					const winningPlayer = updatedPlayers.reduce((lowest, current) =>
+						current.score < lowest.score ? current : lowest,
+					);
+					gameWinner = winningPlayer.name;
+				}
+			}
+		}
+
 		// Create new round entry
 		const newRound: GameRound = {
 			roundNumber: (game.rounds?.length || 0) + 1,
@@ -74,6 +144,7 @@ export function ScoreTracker({
 			...game,
 			players: updatedPlayers,
 			rounds: [...(game.rounds || []), newRound],
+			winner: gameWinner,
 			updatedAt: new Date().toISOString(),
 		};
 
@@ -158,7 +229,9 @@ export function ScoreTracker({
 						<CardTitle className="flex items-center justify-between">
 							{game.name || "Encarta Game"}
 							<span className="text-sm font-normal text-muted-foreground">
-								Win at {game.winThreshold} points
+								{(game.scoringSystem || "win-on-threshold") === "win-on-threshold"
+									? `Ganar con ${game.winThreshold} puntos`
+									: `Perder con ${game.winThreshold} puntos`}
 							</span>
 						</CardTitle>
 					</CardHeader>

@@ -8,7 +8,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Trophy, Search } from "lucide-react";
+import {
+	ArrowLeft,
+	Calendar,
+	Trophy,
+	Search,
+	Crown,
+	Users,
+} from "lucide-react";
 import type { Game } from "../types/game";
 
 interface GameLoaderProps {
@@ -20,6 +27,8 @@ interface GameSummary {
 	id: string;
 	name: string;
 	createdAt: string;
+	winner?: string | null;
+	playerCount?: number;
 }
 
 export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
@@ -128,7 +137,7 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 
 	return (
 		<div className="min-h-screen bg-background flex items-center justify-center p-4">
-			<Card className="w-full max-w-md">
+			<Card className="w-full max-w-4xl">
 				<CardHeader>
 					<div className="flex items-center gap-2">
 						<Button
@@ -204,30 +213,69 @@ export function GameLoader({ onLoadGame, onBackToSetup }: GameLoaderProps) {
 							</Button>
 						</div>
 					) : (
-						<div className="space-y-3">
-							{games.map((game) => (
-								<Card
-									key={game.id}
-									className="cursor-pointer hover:bg-accent transition-colors"
-									onClick={() => handleLoadGame(game.id)}
-								>
-									<CardContent className="p-4">
-										<div className="flex items-center justify-between">
-											<div className="flex-1">
-												<h3 className="font-medium text-sm mb-1">
-													{game.name}
-												</h3>
-												<div className="flex items-center gap-4 text-xs text-muted-foreground">
-													<div className="flex items-center gap-1">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{games.map((game) => {
+								const isFinished =
+									game.winner !== null && game.winner !== undefined;
+								return (
+									<Card
+										key={game.id}
+										className={`cursor-pointer transition-all duration-200 ${
+											isFinished
+												? "bg-green-50 border-green-200 hover:bg-green-100 dark:bg-green-950 dark:border-green-800 dark:hover:bg-green-900"
+												: "hover:bg-accent"
+										}`}
+										onClick={() => handleLoadGame(game.id)}
+									>
+										<CardContent className="p-4">
+											<div className="space-y-3">
+												<div className="flex items-start justify-between">
+													<h3 className="font-medium text-sm leading-tight flex-1 pr-2">
+														{game.name}
+													</h3>
+													{isFinished && (
+														<Crown className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+													)}
+												</div>
+
+												<div className="space-y-2">
+													<div className="flex items-center gap-1 text-xs text-muted-foreground">
 														<Calendar className="h-3 w-3" />
 														{formatDate(game.createdAt)}
 													</div>
+
+													{game.playerCount && (
+														<div className="flex items-center gap-1 text-xs text-muted-foreground">
+															<Users className="h-3 w-3" />
+															{game.playerCount} jugador
+															{game.playerCount !== 1 ? "es" : ""}
+														</div>
+													)}
+
+													{isFinished && game.winner && (
+														<div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+															<Trophy className="h-3 w-3" />
+															Ganador: {game.winner}
+														</div>
+													)}
+												</div>
+
+												<div className="pt-1">
+													<span
+														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+															isFinished
+																? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+																: "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+														}`}
+													>
+														{isFinished ? "Terminado" : "En progreso"}
+													</span>
 												</div>
 											</div>
-										</div>
-									</CardContent>
-								</Card>
-							))}
+										</CardContent>
+									</Card>
+								);
+							})}
 						</div>
 					)}
 				</CardContent>

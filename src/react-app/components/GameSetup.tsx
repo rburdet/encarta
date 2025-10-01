@@ -9,7 +9,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Plus, Trash2, FolderOpen } from "lucide-react";
-import type { GameSettings } from "../types/game";
+import type { GameSettings, ScoringSystem } from "../types/game";
 
 interface GameSetupProps {
 	onStartGame: (settings: GameSettings) => void;
@@ -24,6 +24,8 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 	const [playerNames, setPlayerNames] = useState<string[]>(["", ""]);
 	const [winThreshold, setWinThreshold] = useState(DEFAULT_WIN_THRESHOLD);
 	const [gameName, setGameName] = useState("");
+	const [scoringSystem, setScoringSystem] =
+		useState<ScoringSystem>("win-on-threshold");
 
 	const addPlayer = () => {
 		if (playerNames.length < MAX_PLAYERS) {
@@ -57,6 +59,7 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 			onStartGame({
 				playerNames: playerNames.map((name) => name.trim()),
 				winThreshold,
+				scoringSystem,
 				gameName: gameName.trim() || undefined,
 			});
 		}
@@ -102,7 +105,10 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 
 						<div className="space-y-2">
 							{playerNames.map((name, index) => (
-								<div key={`player-${index}`} className="flex gap-2">
+								<div
+									key={`player-input-${index}-${name || "empty"}`}
+									className="flex gap-2"
+								>
 									<Input
 										placeholder={`Nombre del jugador ${index + 1}`}
 										value={name}
@@ -122,21 +128,69 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 						</div>
 					</div>
 
-					<div className="space-y-2">
-						<label htmlFor="winThreshold" className="text-sm font-medium">
-							Puntos necesarios para ganar
-						</label>
-						<Input
-							id="winThreshold"
-							type="number"
-							placeholder="Points needed to win"
-							value={winThreshold}
-							onChange={(e) => setWinThreshold(Number(e.target.value))}
-							min="1"
-						/>
-						<p className="text-xs text-muted-foreground">
-							El primer jugador que llegue a este puntaje gana el juego
-						</p>
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<label htmlFor="winThreshold" className="text-sm font-medium">
+								Puntos límite
+							</label>
+							<Input
+								id="winThreshold"
+								type="number"
+								placeholder="Puntos límite"
+								value={winThreshold}
+								onChange={(e) => setWinThreshold(Number(e.target.value))}
+								min="1"
+							/>
+						</div>
+
+						<div className="space-y-3">
+							<span className="text-sm font-medium">Sistema de puntuación</span>
+							<div className="space-y-2">
+								<div className="flex items-center space-x-2">
+									<input
+										type="radio"
+										id="win-on-threshold"
+										name="scoringSystem"
+										value="win-on-threshold"
+										checked={scoringSystem === "win-on-threshold"}
+										onChange={(e) =>
+											setScoringSystem(e.target.value as ScoringSystem)
+										}
+										className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+									/>
+									<label htmlFor="win-on-threshold" className="text-sm">
+										<span className="font-medium">
+											Ganar al alcanzar puntos
+										</span>
+										<p className="text-xs text-muted-foreground">
+											El primer jugador que llegue a {winThreshold} puntos gana
+										</p>
+									</label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<input
+										type="radio"
+										id="lose-on-threshold"
+										name="scoringSystem"
+										value="lose-on-threshold"
+										checked={scoringSystem === "lose-on-threshold"}
+										onChange={(e) =>
+											setScoringSystem(e.target.value as ScoringSystem)
+										}
+										className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+									/>
+									<label htmlFor="lose-on-threshold" className="text-sm">
+										<span className="font-medium">
+											Perder al alcanzar puntos
+										</span>
+										<p className="text-xs text-muted-foreground">
+											El jugador que llegue a {winThreshold} puntos pierde (ej:
+											UNO)
+										</p>
+									</label>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					<div className="space-y-3">

@@ -82,6 +82,7 @@ function HomePage() {
 				`Encarta Game - ${new Date().toLocaleDateString()}`,
 			players,
 			winThreshold: settings.winThreshold,
+			scoringSystem: settings.scoringSystem,
 			winner: null,
 			rounds: [],
 			createdAt: new Date().toISOString(),

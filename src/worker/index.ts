@@ -1,5 +1,16 @@
 import { Hono } from "hono";
 
+interface GameSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+interface EnrichedGameSummary extends GameSummary {
+  winner?: string | null;
+  playerCount?: number;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.get("/api/", (c) => c.json({ name: "UNO Score Tracker" }));
@@ -67,7 +78,30 @@ app.get("/api/games", async (c) => {
   try {
     const gamesList = await c.env.CARD_GAMES.get("games:list");
     const games = gamesList ? JSON.parse(gamesList) : [];
-    return c.json({ games });
+    
+    // Enrich games with winner status
+    const enrichedGames = await Promise.all(
+      games.map(async (gameSummary: GameSummary): Promise<EnrichedGameSummary> => {
+        try {
+          const gameData = await c.env.CARD_GAMES.get(`game:${gameSummary.id}`);
+          if (gameData) {
+            const fullGame = JSON.parse(gameData);
+            return {
+              ...gameSummary,
+              winner: fullGame.winner,
+              playerCount: fullGame.players?.length || 0
+            };
+          }
+          return gameSummary;
+        } catch (error) {
+          console.error(`Error enriching game ${gameSummary.id}:`, error);
+          return gameSummary;
+        }
+      })
+    );
+    
+    const sortedGames = enrichedGames.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return c.json({ games: sortedGames });
   } catch (error) {
     console.error("Error fetching games list:", error);
     return c.json({ error: "Failed to fetch games" }, 500);
