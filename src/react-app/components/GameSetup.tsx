@@ -105,10 +105,7 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 
 						<div className="space-y-2">
 							{playerNames.map((name, index) => (
-								<div
-									key={`player-input-${index}-${name || "empty"}`}
-									className="flex gap-2"
-								>
+								<div key={index} className="flex gap-2">
 									<Input
 										placeholder={`Nombre del jugador ${index + 1}`}
 										value={name}
