@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,11 @@ import {
 import { Plus, Trash2, FolderOpen } from "lucide-react";
 import type { GameSettings, ScoringSystem } from "../types/game";
 
+interface PlayerInput {
+	id: string;
+	name: string;
+}
+
 interface GameSetupProps {
 	onStartGame: (settings: GameSettings) => void;
 	onLoadGame: () => void;
@@ -21,35 +26,38 @@ const MAX_PLAYERS = 8;
 const DEFAULT_WIN_THRESHOLD = 2000;
 
 export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
-	const [playerNames, setPlayerNames] = useState<string[]>(["", ""]);
+	const idCounter = useRef(2);
+	const [players, setPlayers] = useState<PlayerInput[]>([
+		{ id: "player-0", name: "" },
+		{ id: "player-1", name: "" },
+	]);
 	const [winThreshold, setWinThreshold] = useState(DEFAULT_WIN_THRESHOLD);
 	const [gameName, setGameName] = useState("");
 	const [scoringSystem, setScoringSystem] =
 		useState<ScoringSystem>("win-on-threshold");
 
 	const addPlayer = () => {
-		if (playerNames.length < MAX_PLAYERS) {
-			setPlayerNames([...playerNames, ""]);
+		if (players.length < MAX_PLAYERS) {
+			const newId = `player-${idCounter.current++}`;
+			setPlayers([...players, { id: newId, name: "" }]);
 		}
 	};
 
-	const removePlayer = (index: number) => {
-		if (playerNames.length > MIN_PLAYERS) {
-			setPlayerNames(playerNames.filter((_, i) => i !== index));
+	const removePlayer = (id: string) => {
+		if (players.length > MIN_PLAYERS) {
+			setPlayers(players.filter((p) => p.id !== id));
 		}
 	};
 
-	const updatePlayerName = (index: number, name: string) => {
-		const updated = [...playerNames];
-		updated[index] = name;
-		setPlayerNames(updated);
+	const updatePlayerName = (id: string, name: string) => {
+		setPlayers(players.map((p) => (p.id === id ? { ...p, name } : p)));
 	};
 
 	const canStartGame = () => {
-		const validNames = playerNames.filter((name) => name.trim().length > 0);
+		const validNames = players.filter((p) => p.name.trim().length > 0);
 		return (
 			validNames.length >= MIN_PLAYERS &&
-			validNames.length === playerNames.length &&
+			validNames.length === players.length &&
 			winThreshold > 0
 		);
 	};
@@ -57,7 +65,7 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 	const handleStartGame = () => {
 		if (canStartGame()) {
 			onStartGame({
-				playerNames: playerNames.map((name) => name.trim()),
+				playerNames: players.map((p) => p.name.trim()),
 				winThreshold,
 				scoringSystem,
 				gameName: gameName.trim() || undefined,
@@ -96,7 +104,7 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 								variant="outline"
 								size="sm"
 								onClick={addPlayer}
-								disabled={playerNames.length >= MAX_PLAYERS}
+								disabled={players.length >= MAX_PLAYERS}
 							>
 								<Plus className="h-4 w-4 mr-1" />
 								Add
@@ -104,18 +112,20 @@ export function GameSetup({ onStartGame, onLoadGame }: GameSetupProps) {
 						</div>
 
 						<div className="space-y-2">
-							{playerNames.map((name, index) => (
-								<div key={index} className="flex gap-2">
+							{players.map((player, index) => (
+								<div key={player.id} className="flex gap-2">
 									<Input
 										placeholder={`Nombre del jugador ${index + 1}`}
-										value={name}
-										onChange={(e) => updatePlayerName(index, e.target.value)}
+										value={player.name}
+										onChange={(e) =>
+											updatePlayerName(player.id, e.target.value)
+										}
 									/>
-									{playerNames.length > MIN_PLAYERS && (
+									{players.length > MIN_PLAYERS && (
 										<Button
 											variant="outline"
 											size="icon"
-											onClick={() => removePlayer(index)}
+											onClick={() => removePlayer(player.id)}
 										>
 											<Trash2 className="h-4 w-4" />
 										</Button>
